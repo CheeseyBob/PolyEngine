@@ -6,7 +6,7 @@ import java.util.LinkedList;
 public abstract class Scene implements Drawable, Stepable {
 	
 	/**
-	 * Called each frame to draw specific scene elements in addition to Objects placed into the PolyEngine.
+	 * Called each frame to draw scene-specific elements in addition to Objects placed into the PolyEngine.
 	 * @param g
 	 */
 	public abstract void draw(Graphics2D g);
@@ -21,5 +21,11 @@ public abstract class Scene implements Drawable, Stepable {
 	 * Called when this scene is passed into PolyEngine.loadScene(scene).
 	 */
 	public abstract void load();
+	
+	/**
+	 * Called each frame to do scene-specific calculations in addition to Objects placed into the PolyEngine.
+	 * @param g
+	 */
+	public abstract void step(double tpf);
 	
 }

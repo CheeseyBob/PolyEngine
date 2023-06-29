@@ -23,6 +23,10 @@ public class Sprite {
 		this(new BufferedImage[] {image}, 0);
 	}
 	
+	public Sprite(String imageFile){
+		this(new BufferedImage[] {ImageHandler.loadImage(imageFile)}, 0);
+	}
+	
 	public Sprite(BufferedImage frame1, BufferedImage frame2, double timePerFrame){
 		this(new BufferedImage[] {frame1, frame2}, timePerFrame);
 	}
