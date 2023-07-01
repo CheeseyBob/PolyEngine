@@ -1,0 +1,27 @@
+Project setup in IntelliJ:
+- Clone the Utilities repo and open it as a project in IntelliJ.
+- Open this project in IntelliJ.
+- Right-click on the project name in the left panel.
+    -> Open Module Settings
+    -> Project Settings
+    -> Modules
+- Click the + icon above the centre panel where PolyEngine is listed.
+    -> Import Module
+    -> Select Utilities project folder
+    -> Open
+    -> Create module from existing sources
+        -> Next
+        -> Next
+        -> Next
+        -> Next
+        -> Reuse
+        -> Create
+- Select PolyEngine in the centre panel
+    -> Dependencies
+        -> +
+            -> Module Dependency
+            -> Utilities
+            -> Ok
+- Check it for export (?)
+- Apply
+- OK
