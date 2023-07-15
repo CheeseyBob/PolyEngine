@@ -52,7 +52,7 @@ class Scene1 extends Scene {
 			PolyEngine.place(bullet);
 			bullet.setLocation(bullet.getX() + bullet.dx/60, bullet.getY() + bullet.dy/60);
 		}
-		PolyEngine.centreViewOn(player.getX(), player.getY());
+		PolyEngine.setViewLocation(player.getX(), player.getY());
 		if(score >= 2){
 			PolyEngine.loadScene(ExampleGame.scene2, true);
 		}

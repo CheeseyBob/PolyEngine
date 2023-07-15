@@ -7,17 +7,17 @@ import maths.M;
 
 public class Actor implements Location, Stepable, Drawable, Collidable, Opaque {
 	protected double x = 0, y = 0, rotation = 0;
-	protected double absoluteZDepth = 0.0f;
-	protected boolean hasDynamicZDepth = false;
+	protected double absoluteZDepth;
+	protected boolean hasDynamicZDepth;
 	protected Sprite sprite;
 	protected Poly2D collisionMesh;
 	protected Poly2D opacityMesh;
 	
-	public boolean isSolid = false;
-	public CollisionGroup collisionGroup = null;
+	public boolean isSolid;
+	public CollisionGroup collisionGroup;
 	
 	public Actor(double x, double y, double absoluteZDepth, boolean hasDynamicZDepth, Sprite sprite){
-		this(x, y, absoluteZDepth, hasDynamicZDepth, 0, sprite, null, false, null, null);
+		this(x, y, absoluteZDepth, hasDynamicZDepth, 0, sprite, null, false, CollisionGroup.NONE, null);
 	}
 	
 	public Actor(double x, double y, double absoluteZDepth, boolean hasDynamicZDepth, double rotation, Sprite sprite, Poly2D collisionMesh, boolean isSolid, CollisionGroup collisionGroup, Poly2D opacityMesh){
@@ -32,12 +32,8 @@ public class Actor implements Location, Stepable, Drawable, Collidable, Opaque {
 		this.hasDynamicZDepth = hasDynamicZDepth;
 	}
 	
-	public Actor(double x, double y, double absoluteZDepth, double rotation, Sprite sprite, Poly2D collisionMesh, boolean isSolid, CollisionGroup collisionGroup, Poly2D opacityMesh){
-		this(x, y, absoluteZDepth, false, rotation, sprite, collisionMesh, isSolid, null, null);
-	}
-	
 	public Actor(double x, double y, double rotation, Sprite sprite, Poly2D collisionMesh, boolean isSolid){
-		this(x, y, 0.0f, false, rotation, sprite, collisionMesh, isSolid, null, null);
+		this(x, y, 0.0f, false, rotation, sprite, collisionMesh, isSolid, CollisionGroup.NONE, null);
 	}
 	
 	public double distanceTo(Actor actor){
@@ -62,23 +58,6 @@ public class Actor implements Location, Stepable, Drawable, Collidable, Opaque {
 			g.rotate(-rotation);
 			g.translate(-xInt, -yInt);
 		}
-	}
-	
-	/**
-	 * This should be changed to return a list of all colliding objects.
-	 */
-	public Collidable getCollision(){
-		for(Collidable collidable: PolyEngine.getCollideList()){
-			if(collidable != this ){
-				CollisionGroup collisionGroup = getCollisionGroup();
-				if(collisionGroup == null || collisionGroup.collidesWith(collidable.getCollisionGroup())){
-					if(collidable.hasCollisionMesh() && collidable.getCollisionMesh().isCollidingWith(collisionMesh)){
-						return collidable;
-					}
-				}
-			}
-		}
-		return null;
 	}
 	
 	public CollisionGroup getCollisionGroup(){
@@ -120,26 +99,10 @@ public class Actor implements Location, Stepable, Drawable, Collidable, Opaque {
 			return absoluteZDepth;
 		}
 	}
-	
-	public boolean hasCollisionMesh(){
-		return (collisionMesh != null);
-	}
-	
-	public boolean isColliding(){
-		return (getCollision() != null);
-	}
-	
-	public boolean isCollidingWith(Collidable object){
-		Poly2D otherCollisionMesh = object.getCollisionMesh();
-		if(collisionMesh != null && otherCollisionMesh != null){
-			return otherCollisionMesh.isCollidingWith(collisionMesh);
-		} else {
-			return false;
-		}
-	}
-	
-	public boolean isSolid(){
-		return isSolid;
+
+	private boolean isObstructed(){
+		return isSolid && PolyEngine.calculateCollisions(this)
+				.anyMatch(collider -> collider != this);
 	}
 	
 	public void move(double dx, double dy){
@@ -147,7 +110,7 @@ public class Actor implements Location, Stepable, Drawable, Collidable, Opaque {
 			setLocation(x + dx, y + dy);
 		} else {
 			setLocation(x + dx, y + dy);
-			if(isColliding()){
+			if(isObstructed()){
 				setLocation(x - dx, y - dy);
 			}
 		}
@@ -158,7 +121,7 @@ public class Actor implements Location, Stepable, Drawable, Collidable, Opaque {
 			setRotation(this.rotation + angle);
 		} else {
 			setRotation(this.rotation + angle);
-			if(isColliding()){
+			if(isObstructed()){
 				setRotation(this.rotation - angle);
 			}
 		}

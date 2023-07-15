@@ -20,18 +20,10 @@ public class Poly2D {
 	}
 
 	public Poly2D(Line2D.Double[] edgeList, double xCentre, double yCentre){
-		centre.x = xCentre;
-		centre.y = yCentre;
-		this.edgeList = new Line2D.Double[edgeList.length];
-		for(int i = 0; i < edgeList.length; i ++){
-			this.edgeList[i] = edgeList[i];
-
-			double dx1 = edgeList[i].x1 - xCentre;
-			double dy1 = edgeList[i].y1 - yCentre;
-			double dx2 = edgeList[i].x1 - xCentre;
-			double dy2 = edgeList[i].y1 - yCentre;
-			rMax = Math.max(rMax, Math.max(Math.sqrt(dx1*dx1 + dy1*dy1), Math.sqrt(dx2*dx2 + dy2*dy2)));
-		}
+		this.centre.x = xCentre;
+		this.centre.y = yCentre;
+		this.edgeList = edgeList;
+		calculateRadius();
 	}
 
 	public Poly2D(double[] xList, double[] yList){
@@ -40,6 +32,19 @@ public class Poly2D {
 
 	public Poly2D(double[] xList, double[] yList, double xCentre, double yCentre){
 		this(toEdgeList(xList, yList), xCentre, yCentre);
+	}
+
+	public Poly2D(double x1, double y1, double x2, double y2){
+		this(new Line2D.Double[]{new Line2D.Double(x1, y1, x2, y2)}, M.mean(x1, x2), M.mean(y1, y2));
+	}
+
+	private void calculateRadius() {
+		double[] distances = new double[edgeList.length + 1];
+		distances[0] = centre.distance(edgeList[0].getP1());
+		distances[1] = centre.distance(edgeList[0].getP2());
+		for(int i = 1; i < edgeList.length; i ++)
+			distances[i+1] = centre.distance(edgeList[i].getP2());
+		rMax = M.max(distances);
 	}
 
 	public Poly2D clone(){
@@ -146,5 +151,18 @@ public class Poly2D {
 
 	public void setCentre(Point2D p){
 		centre.setLocation(p);
+		calculateRadius();
+	}
+
+	public void setPoint(int index, double x, double y){
+		if(index != 0) {
+			edgeList[index - 1].x2 = x;
+			edgeList[index - 1].y2 = y;
+		}
+		if(index != edgeList.length) {
+			edgeList[index].x1 = x;
+			edgeList[index].y1 = y;
+		}
+		calculateRadius();
 	}
 }
