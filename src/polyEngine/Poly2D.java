@@ -10,74 +10,66 @@ public class Poly2D {
 	private final Point2D.Double centre = new Point2D.Double(0, 0);
 	private double rMax;
 
-	private static Line2D.Double[] toEdgeList(double[] xList, double[] yList){
+	private static Line2D.Double[] toEdgeList(double[] xList, double[] yList) {
 		Line2D.Double[] edgeList = new Line2D.Double[xList.length];
-		for(int i = 1; i < xList.length; i ++){
+		for(int i = 1; i < xList.length; i ++) {
 			edgeList[i - 1] = new Line2D.Double(xList[i - 1], yList[i - 1], xList[i], yList[i]);
 		}
 		edgeList[xList.length - 1] = new Line2D.Double(xList[xList.length - 1], yList[xList.length - 1], xList[0], yList[0]);
 		return edgeList;
 	}
 
-	public Poly2D(Line2D.Double[] edgeList, double xCentre, double yCentre){
-		this.centre.x = xCentre;
-		this.centre.y = yCentre;
+	private static Line2D.Double[] toEdgeList(double x1, double y1, double x2, double y2) {
+		return new Line2D.Double[] {
+				new Line2D.Double(x1, y1, x2, y2)
+		};
+	}
+
+	public Poly2D(Line2D.Double[] edgeList) {
 		this.edgeList = edgeList;
-		calculateRadius();
+		recalculate();
 	}
 
-	public Poly2D(double[] xList, double[] yList){
-		this(xList, yList, M.mean(xList), M.mean(yList));
+	public Poly2D(double[] xList, double[] yList) {
+		this(toEdgeList(xList, yList));
 	}
 
-	public Poly2D(double[] xList, double[] yList, double xCentre, double yCentre){
-		this(toEdgeList(xList, yList), xCentre, yCentre);
+	public Poly2D(double x1, double y1, double x2, double y2) {
+		this(toEdgeList(x1, y1, x2, y2));
 	}
 
-	public Poly2D(double x1, double y1, double x2, double y2){
-		this(new Line2D.Double[]{new Line2D.Double(x1, y1, x2, y2)}, M.mean(x1, x2), M.mean(y1, y2));
-	}
-
-	private void calculateRadius() {
-		double[] distances = new double[edgeList.length + 1];
-		distances[0] = centre.distance(edgeList[0].getP1());
-		distances[1] = centre.distance(edgeList[0].getP2());
-		for(int i = 1; i < edgeList.length; i ++)
-			distances[i+1] = centre.distance(edgeList[i].getP2());
-		rMax = M.max(distances);
-	}
-
-	public Poly2D clone(){
+	public Poly2D clone() {
 		Line2D.Double[] edgeList = new Line2D.Double[this.edgeList.length];
-		for(int i = 0; i < edgeList.length; i ++){
+		for(int i = 0; i < edgeList.length; i ++) {
 			edgeList[i] = new Line2D.Double(this.edgeList[i].x1, this.edgeList[i].y1, this.edgeList[i].x2, this.edgeList[i].y2);
 		}
-		return new Poly2D(edgeList, centre.x, centre.y);
+		return new Poly2D(edgeList);
 	}
 
-	public void draw(Graphics2D g){
+	public void draw(Graphics2D g) {
 		for (Line2D.Double edge : edgeList) {
 			g.drawLine((int) edge.x1, (int) edge.y1, (int) edge.x2, (int) edge.y2);
 		}
+		g.drawOval((int) (centre.x - rMax), (int) (centre.y - rMax), (int) (rMax * 2), (int) (rMax * 2));
 	}
 
-	public Point2D getCentre(){
+	public Point2D getCentre() {
 		return new Point2D.Double(centre.x, centre.y);
 	}
 
 	/**
 	 * Returns the radius for a circle which bounds this polygon.
 	 */
-	public double getRadius(){
+	public double getRadius() {
 		return rMax;
 	}
 
-	public boolean isCollidingWith(Poly2D mesh){
-		if(centre.distanceSq(mesh.centre) < (rMax + mesh.rMax)*(rMax + mesh.rMax)){
-			for(Line2D edge: edgeList){
-				for(Line2D line: mesh.edgeList){
+	public boolean isCollidingWith(Poly2D mesh) {
+		if(centre.distanceSq(mesh.centre) < (rMax + mesh.rMax)*(rMax + mesh.rMax)) {
+			for(Line2D edge: edgeList) {
+				for(Line2D line: mesh.edgeList) {
 					//TODO : improve this if it isn't good enough
-					if(edge.intersectsLine(line)){
+					if(edge.intersectsLine(line)) {
 						return true;
 					}
 				}
@@ -86,7 +78,13 @@ public class Poly2D {
 		return false;
 	}
 
-	public void obscureView(double viewX, double viewY, double distance, Graphics2D g){
+	public void morph(PointMorph... morphs) {
+		for(PointMorph morph : morphs)
+			morph.apply(this);
+		recalculate();
+	}
+
+	public void obscureView(double viewX, double viewY, double distance, Graphics2D g) {
 		int[] xList = new int[4];
 		int[] yList = new int[4];
 		for (Line2D.Double edge : edgeList) {
@@ -117,18 +115,29 @@ public class Poly2D {
 		}
 	}
 
-	public void translate(double dx, double dy){
-		for (Line2D.Double edge : edgeList) {
-			edge.x1 += dx;
-			edge.y1 += dy;
-			edge.x2 += dx;
-			edge.y2 += dy;
+	private void recalculate() {
+		{ // Recalculate centre
+			double[] xList = new double[edgeList.length];
+			double[] yList = new double[edgeList.length];
+			for (int i = 0; i < edgeList.length; i ++) {
+				// Edge midpoints, except ...
+				xList[i] = edgeList[i].x1 + edgeList[i].x2;
+				yList[i] = edgeList[i].y1 + edgeList[i].y2;
+			}
+			centre.x = M.mean(xList) / 2;
+			centre.y = M.mean(yList) / 2;
 		}
-		centre.x += dx;
-		centre.y += dy;
+		{ // Recalculate radius
+			double[] distances = new double[edgeList.length + 1];
+			distances[0] = centre.distance(edgeList[0].getP1());
+			distances[1] = centre.distance(edgeList[0].getP2());
+			for(int i = 1; i < edgeList.length; i ++)
+				distances[i+1] = centre.distance(edgeList[i].getP2());
+			rMax = M.max(distances);
+		}
 	}
 
-	public void rotate(double angle){
+	public void rotate(double angle) {
 		for (Line2D.Double edge : edgeList) {
 			double x = edge.x1 - centre.x;
 			double y = edge.y1 - centre.y;
@@ -149,20 +158,42 @@ public class Poly2D {
 		}
 	}
 
-	public void setCentre(Point2D p){
-		centre.setLocation(p);
-		calculateRadius();
+	public void translate(double dx, double dy) {
+		for (Line2D.Double edge : edgeList) {
+			edge.x1 += dx;
+			edge.y1 += dy;
+			edge.x2 += dx;
+			edge.y2 += dy;
+		}
+		centre.x += dx;
+		centre.y += dy;
 	}
 
-	public void setPoint(int index, double x, double y){
-		if(index != 0) {
-			edgeList[index - 1].x2 = x;
-			edgeList[index - 1].y2 = y;
+	public static class PointMorph {
+		int index;
+		double x, y;
+
+		public PointMorph(int index) {
+			this.index = index;
 		}
-		if(index != edgeList.length) {
-			edgeList[index].x1 = x;
-			edgeList[index].y1 = y;
+
+		public void setLocation(double x, double y) {
+			this.x = x;
+			this.y = y;
 		}
-		calculateRadius();
+
+		/**
+		 * Call {@code calculateRadius()} after applying a morph.
+		 */
+		private void apply(Poly2D poly) {
+			if(index != 0) {
+				poly.edgeList[index - 1].x2 = x;
+				poly.edgeList[index - 1].y2 = y;
+			}
+			if(index != poly.edgeList.length) {
+				poly.edgeList[index].x1 = x;
+				poly.edgeList[index].y1 = y;
+			}
+		}
 	}
 }
