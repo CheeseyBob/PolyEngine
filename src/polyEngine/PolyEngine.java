@@ -189,7 +189,7 @@ public class PolyEngine {
 		scene.load();
 	}
 
-	public static void moveView(float dx, float dy){
+	public static void moveView(double dx, double dy){
 		viewX += dx;
 		viewY += dy;
 	}
